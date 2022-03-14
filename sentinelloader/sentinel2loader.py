@@ -95,7 +95,9 @@ class Sentinel2Loader:
             if os.path.isfile(apicache_file):
                 logger.debug("Using cached API query contents")
                 products_df = pd.read_csv(apicache_file)
-                os.system("touch -c %s" % apicache_file)
+                f = open(apicache_file, "a")
+                f.close()
+                #os.system("touch -c %s" % apicache_file)
             else:
                 logger.debug("Querying remote API")
                 productType = 'S2MSI%s' % productLevel
@@ -140,13 +142,15 @@ class Sentinel2Loader:
         #download tiles data
         tileFiles = []
         for index, sp in products_df.loc[selectedTiles].iterrows():
-            url = "https://apihub.copernicus.eu/apihub/odata/v1/Products('%s')/Nodes('%s.SAFE')/Nodes('MTD_MSIL%s.xml')/$value" % (sp['uuid'], sp['title'], productLevel)
+            url = r"https://apihub.copernicus.eu/apihub/odata/v1/Products('%s')/Nodes('%s.SAFE')/Nodes('MTD_MSIL%s.xml')/$value" % (sp['uuid'], sp['title'], productLevel)
             meta_cache_file = self.dataPath + "/products/%s-MTD_MSIL%s.xml" % (sp['uuid'], productLevel)
             mcontents = ''
             if self.cacheTilesData and os.path.isfile(meta_cache_file):
                 logger.debug('Reusing cached metadata info for tile \'%s\'', sp['uuid'])
                 mcontents = loadFile(meta_cache_file)
-                os.system("touch -c %s" % meta_cache_file)
+                f = open(meta_cache_file, "a")
+                f.close()
+                #os.system("touch -c %s" % meta_cache_file)
             else:
                 logger.debug('Getting metadata info for tile \'%s\' remotelly', sp['uuid'])
                 r = requests.get(url, auth=(self.user, self.password))
@@ -191,11 +195,11 @@ class Sentinel2Loader:
                 if bandName=='TCI':
                     logger.debug('Removing near black compression artifacts')
                     
-                    ret = os.system("which nearblack")
+                    ret = os.system("where nearblack")
                     if ret != 0:
                         raise Exception("gdal nearblack utility was not found in the system. install it")
                         
-                    ret = os.system("which gdal_translate")
+                    ret = os.system("where gdal_translate")
                     if ret != 0:
                         raise Exception("gdal gdal_translate utility was not found in the system. install it")
                         
@@ -215,7 +219,10 @@ class Sentinel2Loader:
             else:
                 logger.debug('Reusing tile data from cache')
 
-            os.system("touch -c %s" % downloadFilename)
+            #os.system("touch -c %s" % downloadFilename)
+            f = open(downloadFilename, "a")
+            f.close()
+
 
             filename = downloadFilename
             if resolution!=resolutionDownload:
@@ -445,4 +452,5 @@ class Sentinel2Loader:
 
     def cleanupCache(self, filesNotUsedDays):
         os.system("find %s -type f -name '*' -mtime +%s -exec rm {} \;" % (self.dataPath, filesNotUsedDays))
+        
         
